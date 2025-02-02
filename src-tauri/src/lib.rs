@@ -3,12 +3,43 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
+use ollama_rs::{
+    generation::completion::{
+        request::GenerationRequest, GenerationContext,
+    },
+    Ollama,
+};
 
 #[tauri::command]
-fn ask(query: &str) -> String {
-    return  format!("Your question was: {}", query);
+async fn ask(query: &str) -> Result<String, ()> {
+    let response = llama_server(query.to_string()).await;
+    let resp: Vec<&str> = response.split("</think>").collect();
+    let thinking = resp[0].split("<think>").collect::<Vec<&str>>()[1];
+    let answer = resp[1];
+    println!("{:?}",answer);
+    Ok(answer.to_string())
 }
 
+async fn llama_server(input: String) -> String{
+    let ollama = Ollama::default();
+
+
+    let mut context: Option<GenerationContext> = None;
+
+    // let input = "Give me 10 programming languages and what they are good for".to_string();
+
+    let mut request = GenerationRequest::new("deepseek-r1:1.5b".into(), input.to_string());
+        if let Some(context) = context.clone() {
+            request = request.context(context);
+        }
+    let response = ollama.generate(request).await;
+
+    if let Ok(response) = response {
+        println!("{}", response.response);
+        return response.response;
+    }
+    return "Error".to_string();
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
