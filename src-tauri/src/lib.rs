@@ -4,17 +4,17 @@ use tauri::{
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+fn ask(query: &str) -> String {
+    return  format!("Your question was: {}", query);
 }
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![ask])
         .setup(|app| {
             let main_window = app.get_webview_window("main").unwrap();
             #[cfg(target_os = "macos")]
@@ -39,8 +39,8 @@ pub fn run() {
             {
                 // let main_window = app.get_window("main").unwrap();
                 let ctrl_n_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyN);
-                let ctrl_i_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyI);
-                let esc_shortcut = Shortcut::new(Some(Modifiers::empty()), Code::Escape);
+                // let ctrl_i_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyI);
+                // let esc_shortcut = Shortcut::new(Some(Modifiers::empty()), Code::Escape);
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new().with_handler(move |_app, shortcut, event| {
                         println!("Key pressed: {:?}", shortcut.key);
@@ -64,17 +64,10 @@ pub fn run() {
                               }
                             }
                         }
-                        if shortcut == &esc_shortcut && event.state() == ShortcutState::Released{
-                            println!("Escape Released!");
-                            if main_window.is_closable().unwrap() || main_window.is_visible().unwrap(){
-                                main_window.close().unwrap();
-                            }
-                        }
                     })
                     .build(),
                 )?;
                 app.global_shortcut().register(ctrl_n_shortcut)?;
-                app.global_shortcut().register(esc_shortcut)?;
             }
             Ok(())
         })
