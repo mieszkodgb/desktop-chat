@@ -10,7 +10,7 @@
         <div
           v-if="response!=''"
           :id="response"
-          class="bg-gray-800 rounded-lg p-4 transform transition-all duration-200 hover:bg-gray-700"
+          class="bg-gray-800 rounded-lg p-4 transform transition-all duration-200 hover:bg-gray-700 max-h-80"
         >
           {{ response }}
         </div>
@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, Channel } from "@tauri-apps/api/core";
 import { listen } from '@tauri-apps/api/event';
 import { ref, watch } from 'vue'
 import { getCurrentWindow, PhysicalSize } from '@tauri-apps/api/window'
@@ -51,15 +51,17 @@ const closeWin = async () =>{
 const handleSubmit = (e: Event) => {
   e.preventDefault()
   if (!query.value.trim()) return
-  
-  invoke<string>('ask', { query: query.value.trim() }).then((message) =>{
+  invoke<string>('ask_stream', { input: query.value.trim(), sender:onEvent}).then((message) =>{
     console.log(message);
-    response.value = message
   });
   // Clear the input
   query.value = ''
 }
-
+const onEvent = new Channel<string>();
+onEvent.onmessage = (message) => {
+  console.log(`got download event ${message}`);
+  response.value = response.value.concat(message)
+};
 
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.key === 'Enter') {

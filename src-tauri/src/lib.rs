@@ -1,18 +1,29 @@
 use tauri::{
-    menu::{Menu, MenuItem}, tray::TrayIconBuilder, Emitter, Manager
+    menu::{Menu, MenuItem},
+    tray::TrayIconBuilder,
+    Emitter, Manager,
+    ipc::Channel
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use ollama_rs::generation::completion::GenerationResponseStream;
 
-use ollama_rs::{
-    generation::completion::{
-        request::GenerationRequest, GenerationContext,
-    },
-    Ollama,
-};
+mod ollama_api;
+use tokio_stream::StreamExt;
+
+#[tauri::command]
+async fn ask_stream(input: String, sender: Channel<String>) {
+
+    let mut stream: GenerationResponseStream = ollama_api::llama_stream(input).await;
+    while let Some(Ok(res)) = stream.next().await {
+        for ele in res {
+            sender.send(ele.response);
+        }
+    }
+}
 
 #[tauri::command]
 async fn ask(query: &str) -> Result<String, ()> {
-    let response = llama_server(query.to_string()).await;
+    let response = ollama_api::llama_server(query.to_string()).await;
     let resp: Vec<&str> = response.split("</think>").collect();
     let thinking = resp[0].split("<think>").collect::<Vec<&str>>()[1];
     let answer = resp[1];
@@ -20,32 +31,14 @@ async fn ask(query: &str) -> Result<String, ()> {
     Ok(answer.to_string())
 }
 
-async fn llama_server(input: String) -> String{
-    let ollama = Ollama::default();
 
-
-    let mut context: Option<GenerationContext> = None;
-
-    // let input = "Give me 10 programming languages and what they are good for".to_string();
-
-    let mut request = GenerationRequest::new("deepseek-r1:1.5b".into(), input.to_string());
-        if let Some(context) = context.clone() {
-            request = request.context(context);
-        }
-    let response = ollama.generate(request).await;
-
-    if let Ok(response) = response {
-        println!("{}", response.response);
-        return response.response;
-    }
-    return "Error".to_string();
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![ask])
+        .invoke_handler(tauri::generate_handler![ask_stream])
         .setup(|app| {
             let main_window = app.get_webview_window("main").unwrap();
             #[cfg(target_os = "macos")]
