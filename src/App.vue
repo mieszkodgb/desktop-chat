@@ -1,20 +1,28 @@
 <template>
-  <div @keydown.esc="closeWin" class="min-h-screen bg-gray-900 text-white p-4 static">
+  <div @keydown.esc="closeWin" class="min-h-screen bg-gray-900 text-white p-4">
     <div class="max-w-2xl mx-auto rounded-xl">
-      <input class="h-100 w-full bg-slate-900 focus:outline-none"
-      type="text" placeholder="Search" ref="inputField"
-      @keydown="handleKeyDown" v-model="query"/>
+        <input class="fixed h-100 w-full bg-slate-900 focus:outline-none"
+        type="text" placeholder="Search" ref="inputField"
+        @keydown="handleKeyDown" v-model="query"/>
       <!-- <Input /> -->
       <!-- Responses -->
       
-        <div class="my-6">
-          <div
+        <div class="my-6 fixed">
+          <!-- <div v-if="responses.length!=0"> -->
+            <div v-for="(response, index) in responses"
+            :id="'response-'+index" class="bg-gray-800 rounded-lg p-4 flex flex-col overflow-y-auto transform transition-all duration-200 hover:bg-gray-700 max-h-80">
+              {{ response }}
+            
+            </div>
+          <!-- </div> -->
+          
+          <!-- <div
             v-if="response!=''"
             :id="response"
             class="bg-gray-800 rounded-lg p-4 flex flex-col overflow-y-auto transform transition-all duration-200 hover:bg-gray-700 max-h-80"
           >
           {{ response }}
-          </div>
+          </div> -->
 
         </div>
       
@@ -32,22 +40,46 @@ const initialHeight = 150 // Height for just the input
 const defaultWidth = 1600
 
 const query = ref('')
-const response = ref<string>('')
+const responses = ref<string[]>([])
+let currentHeight = initialHeight
+const lastResponse = ref('')
+// const lastResponse = ref<string>('')
 
-// Update window size based on responses
-watch(response, async (newResponse) => {
+// watch(responses, async (Responses: string[]) => {
+//   let responseSize  = 0
+//   console.log("Watch responses: "+responses.value)
+//   if (Responses.length!=0){
+//     responseSize = Responses[Responses.length - 1].length
+//   }
+//   const maxSize = 1000
+//   const additionnalHeight = Math.ceil(responseSize/86)*50+100
+//   const newHeight = Responses.length!=0 ? Math.min(currentHeight+additionnalHeight, maxSize) : initialHeight
+//   // const newHeight = Responses.length!=0 ? Math.min(initialHeight+100+additionnalHeight, maxSize) : initialHeight
+//   await getCurrentWindow().setSize(new PhysicalSize(defaultWidth, newHeight))
+//   currentHeight = newHeight
+//   console.log(currentHeight)
+
+// })
+watch(lastResponse, async (Response: string) => {
   let responseSize  = 0
-  if (newResponse){
-    responseSize = newResponse.length
+  console.log("Current Height: "+currentHeight)
+  if (Response!=''){
+    responseSize = Response.length
   }
+  const someResponse = Response!='' || responses.value.length!=0
+  console.log('Some resp: '+someResponse)
   const maxSize = 1000
-  const newHeight = newResponse ? Math.min(initialHeight+100+Math.ceil(responseSize/86)*50, maxSize) : initialHeight
+  const additionnalHeight = Math.ceil(responseSize/86)*50+100
+  const newHeight = someResponse ? Math.min(currentHeight+additionnalHeight, maxSize) : initialHeight
+  // const newHeight = Responses.length!=0 ? Math.min(initialHeight+100+additionnalHeight, maxSize) : initialHeight
+  console.log("New height: "+newHeight)
   await getCurrentWindow().setSize(new PhysicalSize(defaultWidth, newHeight))
+  currentHeight = newHeight
 
 })
 
 const closeWin = async () =>{
-  response.value = ''
+  responses.value = []
   await getCurrentWindow().close();
 }
 
@@ -59,11 +91,20 @@ const handleSubmit = (e: Event) => {
   });
   // Clear the input
   query.value = ''
+  lastResponse.value = ""
+  responses.value = responses.value.concat([""])
 }
 const onEvent = new Channel<string>();
 onEvent.onmessage = (message) => {
-  console.log(`got download event ${message}`);
-  response.value = response.value.concat(message)
+  console.log("Received: "+message)
+  // if(message == "<answer>"){
+  //   responses.value = responses.value.concat([""])
+  // }
+  // else{
+  //   responses.value[responses.value.length-1] = responses.value[responses.value.length-1].concat(message)
+  // }
+  responses.value[responses.value.length-1] = responses.value[responses.value.length-1].concat(message)
+  lastResponse.value = lastResponse.value.concat(message)
 };
 
 const handleKeyDown = (e: KeyboardEvent) => {
@@ -79,7 +120,7 @@ const focusInput = () => {
 }
 // Set up event listener
 listen('focus-input', async () => {
-  response.value = ''
+  responses.value = []
   await getCurrentWindow().setSize(new PhysicalSize(defaultWidth, 200))
   // await appWindow.setSize(new PhysicalSize(600, initialHeight))
   focusInput()
