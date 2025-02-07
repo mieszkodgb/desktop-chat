@@ -1,8 +1,5 @@
 use tauri::{
-    menu::{Menu, MenuItem},
-    tray::TrayIconBuilder,
-    Emitter, Manager,
-    ipc::Channel
+    ipc::Channel, menu::{Menu, MenuItem}, tray::TrayIconBuilder, AppHandle, Emitter, Manager
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use ollama_rs::generation::completion::GenerationResponseStream;
@@ -11,14 +8,16 @@ mod ollama_api;
 use tokio_stream::StreamExt;
 
 #[tauri::command]
-async fn ask_stream(input: String, sender: Channel<String>) {
-
+async fn ask_stream(app: AppHandle, input: String, sender: Channel<String>) {
     let mut stream: GenerationResponseStream = ollama_api::llama_stream(input).await;
+    sender.send("<answer>".to_string()).unwrap();
     while let Some(Ok(res)) = stream.next().await {
         for ele in res {
+            // println!("Sending: {:?}", ele.response);
             sender.send(ele.response);
         }
     }
+    sender.send("</answer>".to_string()).unwrap();
 }
 
 #[tauri::command]
