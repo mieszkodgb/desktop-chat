@@ -10,14 +10,21 @@ use tokio_stream::StreamExt;
 #[tauri::command]
 async fn ask_stream(app: AppHandle, input: String, sender: Channel<String>) {
     let mut stream: GenerationResponseStream = ollama_api::llama_stream(input).await;
-    sender.send("<answer>".to_string()).unwrap();
+    // sender.send("<answer>".to_string()).unwrap();
+    let mut final_answer = false;
     while let Some(Ok(res)) = stream.next().await {
         for ele in res {
             // println!("Sending: {:?}", ele.response);
-            sender.send(ele.response);
+            let resp = ele.response.clone();
+            if final_answer{
+                sender.send(ele.response);
+            }
+            if resp == "</think>"{
+                final_answer = true
+            }
         }
     }
-    sender.send("</answer>".to_string()).unwrap();
+    // sender.send("</answer>".to_string()).unwrap();
 }
 
 #[tauri::command]
