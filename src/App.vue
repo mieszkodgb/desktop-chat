@@ -1,20 +1,23 @@
 <template>
-  <div @keydown.esc="closeWin" class="min-h-screen bg-gray-900 text-white p-4">
+  <div @keydown.esc="closeWin" class="min-h-screen bg-gray-900 text-white p-4 static">
     <div class="max-w-2xl mx-auto rounded-xl">
       <input class="h-100 w-full bg-slate-900 focus:outline-none"
       type="text" placeholder="Search" ref="inputField"
       @keydown="handleKeyDown" v-model="query"/>
       <!-- <Input /> -->
       <!-- Responses -->
-      <div class="my-6">
-        <div
-          v-if="response!=''"
-          :id="response"
-          class="bg-gray-800 rounded-lg p-4 transform transition-all duration-200 hover:bg-gray-700 max-h-80"
-        >
+      
+        <div class="my-6">
+          <div
+            v-if="response!=''"
+            :id="response"
+            class="bg-gray-800 rounded-lg p-4 flex flex-col overflow-y-auto transform transition-all duration-200 hover:bg-gray-700 max-h-80"
+          >
           {{ response }}
+          </div>
+
         </div>
-      </div>
+      
     </div>
   </div>
 </template>
