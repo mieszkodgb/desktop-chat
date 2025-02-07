@@ -22,7 +22,11 @@
           :key="'response-'+index"
           class="bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-400"
         >
-          <p class="text-white">{{ response }}</p>
+        <div 
+            class="prose max-w-none text-white" 
+            v-html="parseMarkdown(response)"
+          >
+        </div>
         </div>
       </div>
     </div>
@@ -34,6 +38,8 @@ import { invoke, Channel } from "@tauri-apps/api/core";
 import { listen } from '@tauri-apps/api/event';
 import { ref, watch } from 'vue'
 import { getCurrentWindow, PhysicalSize } from '@tauri-apps/api/window'
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 const initialHeight = 150 // Height for just the input
 const defaultWidth = 1600
@@ -77,6 +83,10 @@ const handleSubmit = (e: Event) => {
   lastResponse.value = ""
   responses.value = responses.value.concat([""])
 }
+const parseMarkdown = (content:string) => {
+  const rawHtml =  marked(content) as string;
+  return DOMPurify.sanitize(rawHtml);
+};
 const onEvent = new Channel<string>();
 onEvent.onmessage = (message) => {
   console.log("Received: "+message)
@@ -96,7 +106,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
   }
 }
 
-const inputField = ref(null)
+const inputField = ref()
 
 const focusInput = () => {
   inputField.value?.focus()
