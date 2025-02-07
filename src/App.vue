@@ -1,31 +1,30 @@
 <template>
-  <div @keydown.esc="closeWin" class="min-h-screen bg-gray-900 text-white p-4">
-    <div class="max-w-2xl mx-auto rounded-xl">
-        <input class="fixed h-100 w-full bg-slate-900 focus:outline-none"
-        type="text" placeholder="Search" ref="inputField"
-        @keydown="handleKeyDown" v-model="query"/>
-      <!-- <Input /> -->
-      <!-- Responses -->
-      
-        <div class="my-6 fixed">
-          <!-- <div v-if="responses.length!=0"> -->
-            <div v-for="(response, index) in responses"
-            :id="'response-'+index" class="bg-gray-800 rounded-lg p-4 flex flex-col overflow-y-auto transform transition-all duration-200 hover:bg-gray-700 max-h-80">
-              {{ response }}
-            
-            </div>
-          <!-- </div> -->
-          
-          <!-- <div
-            v-if="response!=''"
-            :id="response"
-            class="bg-gray-800 rounded-lg p-4 flex flex-col overflow-y-auto transform transition-all duration-200 hover:bg-gray-700 max-h-80"
-          >
-          {{ response }}
-          </div> -->
-
+  <div @keydown.esc="closeWin" class="min-h-screen bg-gray-900 text-white p-4 mx-auto">
+    <!-- Fixed search container -->
+    <div class="fixed top-0 left-0 right-0 bg-gray-900 shadow-md p-4 z-10">
+      <div class="max-w-7xl mx-auto w-full">
+        <input 
+        class="bg-gray-900 focus:outline-none rounded-md w-full"
+        type="text"
+        placeholder="Search"
+        ref="inputField"
+        @keydown="handleKeyDown"
+        v-model="query"
+        />
+      </div>
+    </div>
+    <hr class="my-10 h-0.5 border-t-0 bg-gray-600 dark:bg-white/10" />
+    <!-- Response container with padding to account for fixed search box -->
+    <div class="pt-2">
+      <div class="mx-auto space-y-1 ">
+        <div 
+          v-for="(response, index) in responses" 
+          :key="'response-'+index"
+          class="bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-400"
+        >
+          <p class="text-white">{{ response }}</p>
         </div>
-      
+      </div>
     </div>
   </div>
 </template>
@@ -43,23 +42,7 @@ const query = ref('')
 const responses = ref<string[]>([])
 let currentHeight = initialHeight
 const lastResponse = ref('')
-// const lastResponse = ref<string>('')
 
-// watch(responses, async (Responses: string[]) => {
-//   let responseSize  = 0
-//   console.log("Watch responses: "+responses.value)
-//   if (Responses.length!=0){
-//     responseSize = Responses[Responses.length - 1].length
-//   }
-//   const maxSize = 1000
-//   const additionnalHeight = Math.ceil(responseSize/86)*50+100
-//   const newHeight = Responses.length!=0 ? Math.min(currentHeight+additionnalHeight, maxSize) : initialHeight
-//   // const newHeight = Responses.length!=0 ? Math.min(initialHeight+100+additionnalHeight, maxSize) : initialHeight
-//   await getCurrentWindow().setSize(new PhysicalSize(defaultWidth, newHeight))
-//   currentHeight = newHeight
-//   console.log(currentHeight)
-
-// })
 watch(lastResponse, async (Response: string) => {
   let responseSize  = 0
   console.log("Current Height: "+currentHeight)
